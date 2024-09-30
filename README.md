@@ -42,11 +42,13 @@
 
    ```bash
    curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+   ```
 
    После установки начните настройку профиля CLI с помощью команды:
 
    ```bash
    yc init
+   ```
    
 2. **Настройка Terraform backend**: Создать S3 bucket для хранения состояния Terraform либо настроить Terraform Cloud для сохранения состояния. Важно проверить, что backend корректно сохраняет состояние и обеспечивает доступ к нему.
 
