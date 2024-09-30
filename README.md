@@ -516,8 +516,6 @@ yandex_vpc_subnet.k8s_subnet[1]: Creation complete after 3s [id=e2lgg5tehc2t39ju
 Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
 ```
 
-### Итог
-
 Команды `terraform apply` и `terraform destroy` успешно протестированы. Ресурсы могут быть автоматически созданы и удалены с помощью Terraform, обеспечивая эффективное управление инфраструктурой в Яндекс.Облаке.
 
 # Итог этапа создания облачной инфраструктуры
