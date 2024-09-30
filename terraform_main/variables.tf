@@ -56,3 +56,11 @@ variable "subnets" {
     }
   ]
 }
+
+variable "service_account_id" {
+  description = "Service Account ID for the Kubernetes cluster"
+}
+
+variable "node_service_account_id" {
+  description = "Service Account ID for the Kubernetes nodes"
+}

@@ -553,3 +553,652 @@ Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
 - Данные для доступа к кластеру находятся в файле `~/.kube/config`.
 - Команда `kubectl get pods --all-namespaces` выполняется без ошибок, отображая статус всех подов во всех пространствах имен.
 
+# Описание действий
+
+# Альтернативный вариант: Использование Yandex Managed Service for Kubernetes (MSK)
+
+## Шаги по созданию Kubernetes кластера в MSK
+
+1. **Создание регионального Kubernetes кластера с помощью Terraform**:
+   - Воспользуйтесь **Yandex Managed Service for Kubernetes (MSK)** для быстрого развертывания и управления Kubernetes кластером без ручной настройки виртуальных машин.
+   - Убедитесь, что у вас настроена конфигурация Terraform и подготовлен S3 bucket для хранения состояния Terraform, как описано в предыдущих этапах.
+
+Для создания кластера необходимо расширить код Terraform, который был создан при создании VPC на предыдщем этапе. Код представлен в папке **terraform_main**.
+
+```bash
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/terraform_main$ terraform plan
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # yandex_kubernetes_cluster.regional_cluster will be created
+  + resource "yandex_kubernetes_cluster" "regional_cluster" {
+      + cluster_ipv4_range       = (known after apply)
+      + cluster_ipv6_range       = (known after apply)
+      + created_at               = (known after apply)
+      + description              = "Regional Kubernetes cluster in 3 zones"
+      + folder_id                = (known after apply)
+      + health                   = (known after apply)
+      + id                       = (known after apply)
+      + labels                   = {
+          + "environment" = "production"
+          + "team"        = "devops"
+        }
+      + log_group_id             = (known after apply)
+      + name                     = "regional-k8s-cluster"
+      + network_id               = (known after apply)
+      + node_ipv4_cidr_mask_size = 24
+      + node_service_account_id  = "ajeho0qqveff433qc77d"
+      + release_channel          = "STABLE"
+      + service_account_id       = "ajeho0qqveff433qc77d"
+      + service_ipv4_range       = (known after apply)
+      + service_ipv6_range       = (known after apply)
+      + status                   = (known after apply)
+
+      + master {
+          + cluster_ca_certificate = (known after apply)
+          + etcd_cluster_size      = (known after apply)
+          + external_v4_address    = (known after apply)
+          + external_v4_endpoint   = (known after apply)
+          + external_v6_endpoint   = (known after apply)
+          + internal_v4_address    = (known after apply)
+          + internal_v4_endpoint   = (known after apply)
+          + public_ip              = true
+          + version                = "1.29"
+          + version_info           = (known after apply)
+
+          + maintenance_policy {
+              + auto_upgrade = true
+
+              + maintenance_window {
+                  + day        = "friday"
+                  + duration   = "4h30m"
+                  + start_time = "10:00"
+                }
+              + maintenance_window {
+                  + day        = "monday"
+                  + duration   = "3h"
+                  + start_time = "15:00"
+                }
+            }
+
+          + master_location (known after apply)
+
+          + master_logging {
+              + audit_enabled              = true
+              + cluster_autoscaler_enabled = true
+              + enabled                    = true
+              + events_enabled             = true
+              + folder_id                  = "b1gvebu61iig30fglmuo"
+              + kube_apiserver_enabled     = true
+            }
+
+          + regional {
+              + region = "ru-central1"
+
+              + location {
+                  + subnet_id = (known after apply)
+                  + zone      = "ru-central1-a"
+                }
+              + location {
+                  + subnet_id = (known after apply)
+                  + zone      = "ru-central1-b"
+                }
+              + location {
+                  + subnet_id = (known after apply)
+                  + zone      = "ru-central1-d"
+                }
+            }
+
+          + zonal (known after apply)
+        }
+    }
+
+  # yandex_kubernetes_node_group.k8s_node_group will be created
+  + resource "yandex_kubernetes_node_group" "k8s_node_group" {
+      + cluster_id        = (known after apply)
+      + created_at        = (known after apply)
+      + description       = "Node group for regional Kubernetes cluster"
+      + id                = (known after apply)
+      + instance_group_id = (known after apply)
+      + labels            = {
+          + "environment" = "production"
+          + "team"        = "devops"
+        }
+      + name              = "k8s-node-group"
+      + status            = (known after apply)
+      + version           = "1.29"
+      + version_info      = (known after apply)
+
+      + allocation_policy {
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-a"
+            }
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-b"
+            }
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-d"
+            }
+        }
+
+      + deploy_policy (known after apply)
+
+      + instance_template {
+          + metadata                  = (known after apply)
+          + nat                       = (known after apply)
+          + network_acceleration_type = (known after apply)
+          + platform_id               = "standard-v3"
+
+          + boot_disk {
+              + size = 50
+              + type = "network-ssd"
+            }
+
+          + container_network (known after apply)
+
+          + container_runtime {
+              + type = "containerd"
+            }
+
+          + gpu_settings (known after apply)
+
+          + network_interface {
+              + ipv4       = true
+              + ipv6       = (known after apply)
+              + nat        = true
+              + subnet_ids = (known after apply)
+            }
+
+          + resources {
+              + core_fraction = (known after apply)
+              + cores         = 2
+              + gpus          = 0
+              + memory        = 4
+            }
+
+          + scheduling_policy {
+              + preemptible = false
+            }
+        }
+
+      + maintenance_policy {
+          + auto_repair  = true
+          + auto_upgrade = true
+
+          + maintenance_window {
+              + day        = "friday"
+              + duration   = "4h30m"
+              + start_time = "10:00"
+            }
+          + maintenance_window {
+              + day        = "monday"
+              + duration   = "3h"
+              + start_time = "15:00"
+            }
+        }
+
+      + scale_policy {
+          + fixed_scale {
+              + size = 3
+            }
+        }
+    }
+
+  # yandex_vpc_network.k8s_network will be created
+  + resource "yandex_vpc_network" "k8s_network" {
+      + created_at                = (known after apply)
+      + default_security_group_id = (known after apply)
+      + description               = "VPC network for k8s"
+      + folder_id                 = (known after apply)
+      + id                        = (known after apply)
+      + labels                    = (known after apply)
+      + name                      = "k8s-network"
+      + subnet_ids                = (known after apply)
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[0] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + created_at     = (known after apply)
+      + description    = "Subnet A in zone ru-central1-a"
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "k8s-subnet-a"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.1.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-a"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[1] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + created_at     = (known after apply)
+      + description    = "Subnet B in zone ru-central1-b"
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "k8s-subnet-b"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.2.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-b"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[2] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + created_at     = (known after apply)
+      + description    = "Subnet D in zone ru-central1-d"
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "k8s-subnet-d"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.3.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-d"
+    }
+
+Plan: 6 to add, 0 to change, 0 to destroy.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
+```
+
+После проведения проверки конфигурации необходимо применить изменения.
+
+```bash
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/terraform_main$ terraform apply
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # yandex_kubernetes_cluster.regional_cluster will be created
+  + resource "yandex_kubernetes_cluster" "regional_cluster" {
+      + cluster_ipv4_range       = (known after apply)
+      + cluster_ipv6_range       = (known after apply)
+      + created_at               = (known after apply)
+      + description              = "Regional Kubernetes cluster in 3 zones"
+      + folder_id                = (known after apply)
+      + health                   = (known after apply)
+      + id                       = (known after apply)
+      + labels                   = {
+          + "environment" = "production"
+          + "team"        = "devops"
+        }
+      + log_group_id             = (known after apply)
+      + name                     = "regional-k8s-cluster"
+      + network_id               = (known after apply)
+      + node_ipv4_cidr_mask_size = 24
+      + node_service_account_id  = "ajeho0qqveff433qc77d"
+      + release_channel          = "STABLE"
+      + service_account_id       = "ajeho0qqveff433qc77d"
+      + service_ipv4_range       = (known after apply)
+      + service_ipv6_range       = (known after apply)
+      + status                   = (known after apply)
+
+      + master {
+          + cluster_ca_certificate = (known after apply)
+          + etcd_cluster_size      = (known after apply)
+          + external_v4_address    = (known after apply)
+          + external_v4_endpoint   = (known after apply)
+          + external_v6_endpoint   = (known after apply)
+          + internal_v4_address    = (known after apply)
+          + internal_v4_endpoint   = (known after apply)
+          + public_ip              = true
+          + version                = "1.29"
+          + version_info           = (known after apply)
+
+          + maintenance_policy {
+              + auto_upgrade = true
+
+              + maintenance_window {
+                  + day        = "friday"
+                  + duration   = "4h30m"
+                  + start_time = "10:00"
+                }
+              + maintenance_window {
+                  + day        = "monday"
+                  + duration   = "3h"
+                  + start_time = "15:00"
+                }
+            }
+
+          + master_location (known after apply)
+
+          + master_logging {
+              + audit_enabled              = true
+              + cluster_autoscaler_enabled = true
+              + enabled                    = true
+              + events_enabled             = true
+              + folder_id                  = "b1gvebu61iig30fglmuo"
+              + kube_apiserver_enabled     = true
+            }
+
+          + regional {
+              + region = "ru-central1"
+
+              + location {
+                  + subnet_id = (known after apply)
+                  + zone      = "ru-central1-a"
+                }
+              + location {
+                  + subnet_id = (known after apply)
+                  + zone      = "ru-central1-b"
+                }
+              + location {
+                  + subnet_id = (known after apply)
+                  + zone      = "ru-central1-d"
+                }
+            }
+
+          + zonal (known after apply)
+        }
+    }
+
+  # yandex_kubernetes_node_group.k8s_node_group will be created
+  + resource "yandex_kubernetes_node_group" "k8s_node_group" {
+      + cluster_id        = (known after apply)
+      + created_at        = (known after apply)
+      + description       = "Node group for regional Kubernetes cluster"
+      + id                = (known after apply)
+      + instance_group_id = (known after apply)
+      + labels            = {
+          + "environment" = "production"
+          + "team"        = "devops"
+        }
+      + name              = "k8s-node-group"
+      + status            = (known after apply)
+      + version           = "1.29"
+      + version_info      = (known after apply)
+
+      + allocation_policy {
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-a"
+            }
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-b"
+            }
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-d"
+            }
+        }
+
+      + deploy_policy (known after apply)
+
+      + instance_template {
+          + metadata                  = (known after apply)
+          + nat                       = (known after apply)
+          + network_acceleration_type = (known after apply)
+          + platform_id               = "standard-v3"
+
+          + boot_disk {
+              + size = 50
+              + type = "network-ssd"
+            }
+
+          + container_network (known after apply)
+
+          + container_runtime {
+              + type = "containerd"
+            }
+
+          + gpu_settings (known after apply)
+
+          + network_interface {
+              + ipv4       = true
+              + ipv6       = (known after apply)
+              + nat        = true
+              + subnet_ids = (known after apply)
+            }
+
+          + resources {
+              + core_fraction = (known after apply)
+              + cores         = 2
+              + gpus          = 0
+              + memory        = 4
+            }
+
+          + scheduling_policy {
+              + preemptible = false
+            }
+        }
+
+      + maintenance_policy {
+          + auto_repair  = true
+          + auto_upgrade = true
+
+          + maintenance_window {
+              + day        = "friday"
+              + duration   = "4h30m"
+              + start_time = "10:00"
+            }
+          + maintenance_window {
+              + day        = "monday"
+              + duration   = "3h"
+              + start_time = "15:00"
+            }
+        }
+
+      + scale_policy {
+          + fixed_scale {
+              + size = 3
+            }
+        }
+    }
+
+  # yandex_vpc_network.k8s_network will be created
+  + resource "yandex_vpc_network" "k8s_network" {
+      + created_at                = (known after apply)
+      + default_security_group_id = (known after apply)
+      + description               = "VPC network for k8s"
+      + folder_id                 = (known after apply)
+      + id                        = (known after apply)
+      + labels                    = (known after apply)
+      + name                      = "k8s-network"
+      + subnet_ids                = (known after apply)
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[0] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + created_at     = (known after apply)
+      + description    = "Subnet A in zone ru-central1-a"
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "k8s-subnet-a"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.1.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-a"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[1] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + created_at     = (known after apply)
+      + description    = "Subnet B in zone ru-central1-b"
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "k8s-subnet-b"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.2.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-b"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[2] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + created_at     = (known after apply)
+      + description    = "Subnet D in zone ru-central1-d"
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "k8s-subnet-d"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.3.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-d"
+    }
+
+Plan: 6 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+yandex_vpc_network.k8s_network: Creating...
+yandex_vpc_network.k8s_network: Creation complete after 9s [id=enpujm466fvb3tff8ufd]
+yandex_vpc_subnet.k8s_subnet[1]: Creating...
+yandex_vpc_subnet.k8s_subnet[2]: Creating...
+yandex_vpc_subnet.k8s_subnet[0]: Creating...
+yandex_vpc_subnet.k8s_subnet[1]: Creation complete after 1s [id=e2l4i6qn0iqluks9r3vf]
+yandex_vpc_subnet.k8s_subnet[2]: Creation complete after 2s [id=fl8dt3mpf3311qemnc61]
+yandex_vpc_subnet.k8s_subnet[0]: Creation complete after 3s [id=e9b63qj1kf9uebupfph2]
+yandex_kubernetes_cluster.regional_cluster: Creating...
+yandex_kubernetes_cluster.regional_cluster: Still creating... [10s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [20s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [30s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [40s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [50s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [1m0s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [1m10s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [1m20s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [1m30s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [1m40s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [1m50s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [2m0s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [2m10s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [2m20s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [2m30s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [2m40s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [2m50s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [3m0s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [3m10s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [3m20s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [3m30s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [3m40s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [3m50s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [4m0s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [4m10s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [4m20s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [4m30s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [4m40s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [4m50s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [5m0s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [5m10s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [5m20s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [5m30s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Still creating... [5m40s elapsed]
+yandex_kubernetes_cluster.regional_cluster: Creation complete after 5m46s [id=catr5akt6pe1or1s5id0]
+yandex_kubernetes_node_group.k8s_node_group: Creating...
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [10s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [20s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [30s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [40s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [50s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [1m0s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [1m10s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [1m20s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [1m30s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [1m40s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [1m50s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [2m0s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Still creating... [2m10s elapsed]
+yandex_kubernetes_node_group.k8s_node_group: Creation complete after 2m18s [id=catju2j98c73ggurp18a]
+
+Apply complete! Resources: 6 added, 0 changed, 0 destroyed.
+```
+
+2. **Настройка регионального мастера Kubernetes**:
+   - Используя **Terraform**, создайте региональный мастер для Kubernetes. При этом мастер будет распределен в различных зонах доступности для обеспечения высокой доступности кластера.
+   - Распределите ноды мастера по трем различным подсетям (availability zones), чтобы минимизировать риски отказа и увеличить надежность.
+
+Действия выполнены на предудщем шаге.
+
+3. **Создание и настройка группы узлов (Node Group)**:
+   - Определите группы узлов (Node Group) — набор виртуальных машин, которые будут выступать worker-нодами в кластере. Каждая группа узлов может быть настроена с разными параметрами производительности и масштабирования.
+   - Используйте ресурсы **Terraform** для настройки групп узлов, задавая параметры автоматического масштабирования и количество нод в каждой группе.
+
+Действия выполнены на предудщем шаге.
+
+4. **Настройка доступа к кластеру**:
+   - После успешного развертывания кластера проверьте файл `~/.kube/config`. Этот файл содержит информацию для доступа к вашему кластеру Kubernetes.
+   - Настройте `kubectl`, чтобы подключиться к кластеру и выполнять команды по управлению ресурсами кластера.
+
+Для получения доступа к кластеру необхомо использовать Yandex CLI.
+
+```bash
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/terraform_main$ yc managed-kubernetes cluster list
++----------------------+----------------------+---------------------+---------+---------+-----------------------+-------------------+
+|          ID          |         NAME         |     CREATED AT      | HEALTH  | STATUS  |   EXTERNAL ENDPOINT   | INTERNAL ENDPOINT |
++----------------------+----------------------+---------------------+---------+---------+-----------------------+-------------------+
+| catr5akt6pe1or1s5id0 | regional-k8s-cluster | 2024-09-30 11:16:11 | HEALTHY | RUNNING | https://84.201.170.85 | https://10.10.1.3 |
++----------------------+----------------------+---------------------+---------+---------+-----------------------+-------------------+
+
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/terraform_main$ yc managed-kubernetes cluster get-credentials catr5akt6pe1or1s5id0 --external
+
+Context 'yc-regional-k8s-cluster' was added as default to kubeconfig '/home/vmaltsev/.kube/config'.
+Check connection to cluster using 'kubectl cluster-info --kubeconfig /home/vmaltsev/.kube/config'.
+
+Note, that authentication depends on 'yc' and its config profile 'test-project'.
+To access clusters using the Kubernetes API, please use Kubernetes Service Account.
+```
+Файл с конфигом создан в папке /home/vmaltsev/.kube
+
+5. **Проверка состояния кластера**:
+   - После настройки доступа к кластеру убедитесь, что все компоненты работают корректно. Выполните команду:
+     ```bash
+     kubectl get pods --all-namespaces
+     ```
+   - Эта команда должна вернуть список всех подов (pods) во всех пространствах имен (namespaces) кластера, отображая их статус без ошибок.
+
+При выполнении команды получается следующий вывод.
+
+```bash
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/terraform_main$ kubectl get pods --all-namespaces
+NAMESPACE     NAME                                   READY   STATUS    RESTARTS   AGE
+kube-system   coredns-5d4bf4fdc8-9rncd               1/1     Running   0          5m57s
+kube-system   coredns-5d4bf4fdc8-hvbj4               1/1     Running   0          10m
+kube-system   ip-masq-agent-5g2wm                    1/1     Running   0          6m28s
+kube-system   ip-masq-agent-nlr2r                    1/1     Running   0          6m29s
+kube-system   ip-masq-agent-xvctw                    1/1     Running   0          6m36s
+kube-system   kube-dns-autoscaler-74d99dd8dc-lmtcc   1/1     Running   0          10m
+kube-system   kube-proxy-8c8f6                       1/1     Running   0          6m36s
+kube-system   kube-proxy-9dnwf                       1/1     Running   0          6m29s
+kube-system   kube-proxy-vkcbf                       1/1     Running   0          6m28s
+kube-system   metrics-server-6b5df79959-bhpzm        2/2     Running   0          5m47s
+kube-system   npd-v0.8.0-2pmpc                       1/1     Running   0          6m36s
+kube-system   npd-v0.8.0-kmqt9                       1/1     Running   0          6m29s
+kube-system   npd-v0.8.0-vnr46                       1/1     Running   0          6m28s
+kube-system   yc-disk-csi-node-v2-6qlcw              6/6     Running   0          6m36s
+kube-system   yc-disk-csi-node-v2-bjgsx              6/6     Running   0          6m29s
+kube-system   yc-disk-csi-node-v2-mxpmh              6/6     Running   0          6m28s
+```
+
+Таким образом создан кластер Kubernetes.
