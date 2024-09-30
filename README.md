@@ -226,9 +226,135 @@ $ terraform output -json
   }
 }
 ```
+
+
 ## Создание сети VPC
 
-Создать виртуальную частную сеть (VPC) с несколькими подсетями в разных зонах доступности (availability zones). Проверить, что сеть корректно сконфигурирована и готова к использованию Kubernetes кластером.
+Создание виртуальной частной сети (VPC) с несколькими подсетями в разных зонах доступности (availability zones) позволяет разделить ресурсы и повысить надежность. Важно проверить, что сеть правильно сконфигурирована и готова к использованию Kubernetes кластером.
+
+Для создания VPC используются конфигурации Terraform, которые размещены в папке `terraform_main` данного репозитория. Terrafom использует ранее настроенный backend, который размещен в S3 бакете.
+
+### Инициализация Terraform
+
+Перед началом работы необходимо инициализировать Terraform, чтобы он мог работать с конфигурациями и провайдерами:
+
+```bash
+$ terraform init
+```
+
+Результат инициализации:
+
+```text
+Initializing the backend...
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+Initializing provider plugins...
+- Finding yandex-cloud/yandex versions matching "0.129.0"...
+- Installing yandex-cloud/yandex v0.129.0...
+- Installed yandex-cloud/yandex v0.129.0 (self-signed, key ID E40F590B50BB8E40)
+Terraform has created a lock file .terraform.lock.hcl to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.
+
+Terraform has been successfully initialized!
+```
+
+После успешной инициализации можно проверить корректность конфигураций:
+
+```bash
+$ terraform validate
+```
+
+Результат:
+
+```text
+Success! The configuration is valid.
+```
+
+### Планирование ресурсов VPC
+
+Для предварительного просмотра изменений, которые будут внесены, выполните команду:
+
+```bash
+$ terraform plan
+```
+
+Пример результата выполнения команды `terraform plan`:
+
+```text
+Terraform will perform the following actions:
+
+  # yandex_vpc_network.k8s_network will be created
+  + resource "yandex_vpc_network" "k8s_network" {
+      + description = "VPC network for k8s"
+      + name        = "k8s-network"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[0] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + description = "Subnet A in zone ru-central1-a"
+      + name        = "k8s-subnet-a"
+      + v4_cidr_blocks = ["10.10.1.0/24"]
+      + zone        = "ru-central1-a"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[1] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + description = "Subnet B in zone ru-central1-b"
+      + name        = "k8s-subnet-b"
+      + v4_cidr_blocks = ["10.10.2.0/24"]
+      + zone        = "ru-central1-b"
+    }
+
+  # yandex_vpc_subnet.k8s_subnet[2] will be created
+  + resource "yandex_vpc_subnet" "k8s_subnet" {
+      + description = "Subnet D in zone ru-central1-d"
+      + name        = "k8s-subnet-d"
+      + v4_cidr_blocks = ["10.10.3.0/24"]
+      + zone        = "ru-central1-d"
+    }
+
+Plan: 4 to add, 0 to change, 0 to destroy.
+```
+
+### Применение изменений
+
+Чтобы создать сеть и подсети на основе конфигурации Terraform, выполните команду:
+
+```bash
+$ terraform apply
+```
+
+После запуска Terraform спросит подтверждение на выполнение изменений. Введите `yes` для подтверждения:
+
+```text
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+```
+
+Результат выполнения:
+
+```text
+yandex_vpc_network.k8s_network: Creating...
+yandex_vpc_network.k8s_network: Creation complete after 9s [id=enprth280e6u25aer1af]
+yandex_vpc_subnet.k8s_subnet[1]: Creating...
+yandex_vpc_subnet.k8s_subnet[2]: Creating...
+yandex_vpc_subnet.k8s_subnet[0]: Creating...
+yandex_vpc_subnet.k8s_subnet[1]: Creation complete after 1s [id=e2lqui71tp7mstadl9em]
+yandex_vpc_subnet.k8s_subnet[2]: Creation complete after 1s [id=fl8ikg4anbku5ihqmr41]
+yandex_vpc_subnet.k8s_subnet[0]: Creation complete after 2s [id=e9b4106odg55o30nsjmp]
+
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+```
+
+После применения изменений будет создана одна сеть и три подсети в разных зонах доступности.
+
+Виртуальная сеть успешно создана и готова к установке класера Kubernetes.
 
 ## Запуск и тестирование команд Terraform
 
