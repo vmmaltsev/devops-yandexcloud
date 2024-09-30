@@ -240,12 +240,12 @@ Do you want to perform these actions?
   Enter a value: yes
 
 yandex_iam_service_account.sa: Creating...
-yandex_iam_service_account.sa: Creation complete after 9s [id=ajeoair4vfinnth8ffr8]
+yandex_iam_service_account.sa: Creation complete after 9s [id=ajeo********ffr8]
 yandex_resourcemanager_folder_iam_member.sa-editor: Creating...
 yandex_iam_service_account_static_access_key.sa-static-key: Creating...
-yandex_iam_service_account_static_access_key.sa-static-key: Creation complete after 2s [id=ajedfjkkn8qu7f4s4mih]
+yandex_iam_service_account_static_access_key.sa-static-key: Creation complete after 2s [id=ajedfj******4mih]
 yandex_storage_bucket.bucket: Creating...
-yandex_resourcemanager_folder_iam_member.sa-editor: Creation complete after 4s [id=b1gvebu61iig30fglmuo/storage.editor/serviceAccount:ajeoair4vfinnth8ffr8]
+yandex_resourcemanager_folder_iam_member.sa-editor: Creation complete after 4s [id=b1gve********lmuo/storage.editor/serviceAccount:ajeoa********8ffr8]
 yandex_storage_bucket.bucket: Still creating... [10s elapsed]
 yandex_storage_bucket.bucket: Creation complete after 19s [id=bucket-vmaltsev-test]
 
