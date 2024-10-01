@@ -807,3 +807,7 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ## Заключение
 На этом этапе был успешно создан git-репозиторий с тестовым приложением, а также DockerHub-репозиторий с загруженным Docker-образом приложения.
+
+![DockerHub](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_183.png)
+
+![GitHub](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_184.png)
