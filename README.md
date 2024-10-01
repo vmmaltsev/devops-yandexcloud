@@ -1133,12 +1133,27 @@ spec:
 
 ```
 
+```bash
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/kubernetes_config/application$ kubectl apply -f deployment.yaml
+deployment.apps/nginx-deployment created
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/kubernetes_config/application$ kubectl apply -f service.yaml
+service/nginx-service created
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud/kubernetes_config/application$ kubectl get svc -n default
+NAME            TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE
+kubernetes      ClusterIP      10.96.128.1    <none>         443/TCP        162m
+nginx-service   LoadBalancer   10.96.151.20   84.201.150.2   80:30140/TCP   2m40s
+```
+
+В результате получен адрес, на котором доступен сайт.
+
 2. **Проверка доступа к тестовому приложению**:
    - Проверьте, что сервис вашего приложения доступен по `http`:
      ```bash
      kubectl get svc -n <namespace>
      ```
    - Найдите внешний адрес сервиса (если используется `NodePort` или `LoadBalancer`) и убедитесь, что вы можете открыть тестовое приложение в браузере.
+
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_188.png)
 
 ### Проверка работы CI/CD пайплайна
 
