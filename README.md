@@ -1090,6 +1090,49 @@ prometheus-operator     ClusterIP      None            <none>           8443/TCP
      ```
    - Все поды должны быть в статусе `Running`.
 
+Для деплоя будет использован, созданный на предыдущем шаге, образ maltsevvm/test_app.
+
+```bash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: maltsevvm/test_app:latest
+        ports:
+        - containerPort: 80
+
+```
+
+```bash
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
+
+```
+
 2. **Проверка доступа к тестовому приложению**:
    - Проверьте, что сервис вашего приложения доступен по `http`:
      ```bash
