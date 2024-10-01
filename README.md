@@ -653,3 +653,157 @@ kube-system   yc-disk-csi-node-v2-mxpmh              6/6     Running   0        
 ## Итог этапа создания кластера Kubernetes
 
 В результате выполнения этого этапа был успешно создан региональный кластер.
+
+
+# Создание тестового приложения
+
+## Описание этапа
+Для перехода к следующему этапу необходимо подготовить тестовое приложение, эмулирующее основное приложение, разрабатываемое вашей компанией. Приложение должно быть простым и легко развертываться в Kubernetes.
+
+## Способы подготовки
+
+### Рекомендуемый вариант
+1. **Создание репозитория для тестового приложения**:
+   - Создайте новый git-репозиторий для приложения.
+   - Добавьте в него простой конфигурационный файл `nginx` для раздачи статических данных (например, HTML-файла).
+
+2. **Подготовка Dockerfile**:
+   - Создайте `Dockerfile` для сборки Docker-образа приложения.
+   - Описывайте инструкции для создания образа на основе `nginx` и копирования статических файлов.
+
+### Альтернативный вариант
+- Используйте любой другой код, главное требование — наличие самостоятельно написанного `Dockerfile`.
+
+## Ожидаемый результат
+
+1. **Git-репозиторий с тестовым приложением и `Dockerfile`**:
+   - Репозиторий содержит все необходимые файлы для сборки и запуска приложения.
+
+2. **Docker-образ в контейнерном реестре**:
+   - Docker-образ собран и загружен в контейнерный реестр (`DockerHub` или `Yandex Container Registry`).
+
+## Описание действий
+
+### Шаг 1: Создание репозитория и конфигурационного файла `nginx`
+- Репозиторий: [GitHub - vmmaltsev/test_app](https://github.com/vmmaltsev/test_app.git).
+
+### Шаг 2: Подготовка `Dockerfile`
+**HTML (index.html):**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Nginx Application</title>
+    <meta name="description" content="This is a simple test application running on Nginx.">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        h1 { color: #333; }
+        p { color: #555; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome</h1>
+    </header>
+    <main>
+        <p>This is a simple test application running on Nginx.</p>
+    </main>
+    <footer>
+        <p>&copy; 2024 Test Application</p>
+    </footer>
+</body>
+</html>
+```
+
+**Nginx конфигурация (nginx.conf):**
+
+```nginx
+events {
+    worker_connections 1024;
+}
+
+http {
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    server {
+        listen 80 default_server;
+        server_name localhost;
+        add_header X-Content-Type-Options nosniff;
+        add_header X-Frame-Options DENY;
+        add_header X-XSS-Protection "1; mode=block";
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            location ~ /\. { deny all; }
+        }
+
+        error_page 404 /404.html;
+        location = /404.html { internal; }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html { internal; }
+    }
+}
+```
+
+**Dockerfile:**
+
+```Dockerfile
+FROM nginx:1.21-alpine
+
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY html/ /usr/share/nginx/html/
+
+EXPOSE 80
+
+ENV NGINX_ENTRYPOINT_QUIET_LOGS=1
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Шаг 3: Сборка и загрузка Docker-образа
+1. Создайте реестр на DockerHub, например, `maltsevvm/test_app`.
+
+2. Соберите и отправьте образ в DockerHub:
+    ```bash
+    docker build -t maltsevvm/test_app:latest .
+    docker push maltsevvm/test_app:latest
+    ```
+
+3. Проверьте, что образ успешно создан:
+    ```bash
+    docker images
+    ```
+    Ожидаемый результат:
+    ```
+    REPOSITORY                 TAG       IMAGE ID       CREATED              SIZE
+    maltsevvm/test_app         latest    <IMAGE_ID>     <TIME_AGO>           23.4MB
+    ```
+
+4. Отправьте образ в репозиторий DockerHub:
+    ```bash
+    docker push maltsevvm/test_app:latest
+    ```
+
+## Заключение
+На этом этапе был успешно создан git-репозиторий с тестовым приложением, а также DockerHub-репозиторий с загруженным Docker-образом приложения.
