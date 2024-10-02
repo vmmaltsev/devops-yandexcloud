@@ -24,10 +24,9 @@
 1. **Создайте сервисный аккаунт**, который будет использоваться Terraform для работы с инфраструктурой с необходимыми правами (не используйте права суперпользователя).
 2. **Подготовьте backend для Terraform**:
    - **Рекомендуемый вариант**: S3 bucket в Яндекс.Облаке (создание бакета через Terraform).
-   - **Альтернативный вариант**: Terraform Cloud.
 3. **Создайте VPC с подсетями** в разных зонах доступности.
 4. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
-5. Если используется **Terraform Cloud** в качестве backend, убедитесь, что применение изменений успешно проходит через web-интерфейс Terraform Cloud.
+
 
 ## Ожидаемые результаты:
 
@@ -58,39 +57,57 @@ yc init
 
 #### Процесс инициализации
 
-Во время инициализации необходимо будет ввести OAuth-токен из сервиса Яндекс ID и создать новый профиль. Пример процесса инициализации:
+Во время инициализации вам будет предложено ввести OAuth-токен из сервиса Яндекс ID и создать новый профиль. Следующий пример демонстрирует более четкие шаги и их объяснения для процесса инициализации:
 
 ```bash
 $ yc init
-Welcome! This command will take you through the configuration process.
-Pick desired action:
+Welcome! This command will guide you through the configuration process.
+
+Pick a desired action:
 [1] Re-initialize this profile 'default' with new settings 
 [2] Create a new profile
 Please enter your numeric choice: 2
-Enter profile name. Names start with a lower case letter and contain only lower case letters a-z, digits 0-9, and hyphens '-': test-project
-Please go to https://oauth.yandex.ru/authorize?response_type=token&client_id=1a69******2fb in order to obtain OAuth token.
+
+Enter a profile name:
+Names must start with a lowercase letter and may only contain lowercase letters (a-z), digits (0-9), and hyphens ('-').
+Profile name: test-project
+
+To proceed, please obtain an OAuth token by visiting the following link:
+https://oauth.yandex.ru/authorize?response_type=token&client_id=1a69******2fb
+After obtaining the token, return here and enter it below.
+
 Please enter OAuth token: y0_AgAAAABkZ6G*******ujmQpGYqjMnKPPvUc
-You have one cloud available: 'cloud-nphne-xquks5er' (id = b1gn***q4s6). It is going to be used by default.
-Please choose folder to use:
+
+You have one cloud available: 'cloud-nphne-xquks5er' (id = b1gn***q4s6). This cloud will be used by default.
+
+Please select a folder to use for this profile:
 [1] main (id = b1gjgdh******120m)
 [2] Create a new folder
 Please enter your numeric choice: 2
-Please enter a folder name: test-project
+
+Enter a new folder name:
+Folder name: test-project
+
 Your current folder has been set to 'test-project' (id = b1gv***muo).
-Do you want to configure a default Compute zone? [Y/n] y
-Which zone do you want to use as a profile default?
+
+Would you like to configure a default Compute zone? [Y/n] y
+
+Select the zone to use as the default for this profile:
 [1] ru-central1-a
 [2] ru-central1-b
 [3] ru-central1-c
 [4] ru-central1-d
-[5] Don't set default zone
+[5] Don't set a default zone
 Please enter your numeric choice: 1
+
 Your profile default Compute zone has been set to 'ru-central1-a'.
+
+Initialization complete! Your new profile 'test-project' is ready for use.
 ```
 
 ### Создание сервисного аккаунта
 
-После инициализации необходимо создать сервисный аккаунт:
+После завершения процесса инициализации необходимо создать сервисный аккаунт. Это можно сделать с помощью следующей команды:
 
 ```bash
 $ yc iam service-account create --name test-sa
@@ -103,7 +120,7 @@ name: test-sa
 
 ### Назначение прав сервисному аккаунту
 
-Назначьте необходимые права созданному сервисному аккаунту в текущем профиле:
+После создания сервисного аккаунта необходимо назначить ему права в текущем профиле. Для этого используется следующая команда:
 
 ```bash
 $ yc resource-manager folder add-access-binding b1g******uo --role editor --subject serviceAccount:ajeho********c77d
@@ -119,7 +136,7 @@ effective_deltas:
 
 ### Создание ключа для Terraform
 
-Создайте ключ доступа для Terraform, который привязан к созданному сервисному аккаунту и профилю:
+Чтобы предоставить Terraform возможность управлять ресурсами, необходимо создать ключ доступа, привязанный к созданному сервисному аккаунту и текущему профилю:
 
 ```bash
 $ yc iam key create   --service-account-id ajeho********77d   --folder-name test-project   --output key_terraform.json
@@ -129,7 +146,7 @@ created_at: "2024-09-30T06:51:46.225440417Z"
 key_algorithm: RSA_2048
 ```
 
-В результате этих действий будет создан JSON-файл с ключом, который используется для управления инфраструктурой через Terraform.
+В результате выполнения указанных команд будет создан JSON-файл с ключом, который используется для управления инфраструктурой через Terraform. Этот файл, сохраненный как `key_terraform.json`, содержит информацию для аутентификации Terraform при работе с ресурсами Yandex Cloud.
 
 ## Настройка Terraform backend
 
@@ -1153,4 +1170,83 @@ nginx-service   LoadBalancer   10.96.151.20   84.201.150.2   80:30140/TCP   2m40
      ```
    - Найдите внешний адрес сервиса (если используется `NodePort` или `LoadBalancer`) и убедитесь, что вы можете открыть тестовое приложение в браузере.
 
-![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_188.png)
+![app](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_188.png)
+
+
+# Этап: Установка и настройка CI/CD
+
+## Описание этапа
+На этом этапе необходимо настроить систему CI/CD для автоматической сборки Docker-образа и деплоя приложения при изменениях в коде репозитория.
+
+## Цель
+
+- Автоматическая сборка Docker-образа при каждом коммите в репозиторий с тестовым приложением.
+- Автоматический деплой нового Docker-образа в Kubernetes.
+- Используйте любую из CI/CD систем: **TeamCity**, **Jenkins**, **GitLab CI**, или **GitHub Actions**.
+
+## Ожидаемый результат
+
+1. **Доступность CI/CD сервиса**:
+   - Интерфейс сервиса CI/CD доступен по HTTP для мониторинга и управления пайплайнами.
+
+Так как выбран GitHub Actions, то интерфейс достпен в репозитории приложения https://github.com/vmmaltsev/test_app/actions/new
+
+1. **Автоматическая сборка и отправка Docker-образа**:
+   - При любом коммите в репозиторий с тестовым приложением запускается сборка Docker-образа.
+   - Собранный образ отправляется в контейнерный реестр (например, DockerHub или Yandex Container Registry).
+
+2. **Сборка и деплой по тегам**:
+   - При создании нового тега (например, `v1.0.0`) запускается сборка Docker-образа.
+   - Образ помечается соответствующим лейблом и отправляется в реестр.
+   - Деплой Docker-образа с тегом в кластер Kubernetes.
+
+## Шаги для настройки CI/CD пайплайна
+
+### 1. Подготовка репозитория
+- Убедитесь, что в репозитории с тестовым приложением находятся все необходимые файлы для сборки Docker-образа (`Dockerfile`, конфигурации).
+
+### 2. Настройка CI/CD сервиса
+- **Для GitHub Actions**: создайте `.github/workflows/main.yml` и опишите шаги для сборки образа, отправки в реестр, и деплоя в Kubernetes.
+
+Так как кластер создан в Yandex Cloud, то для запуска в GitHub Action необходимо создать сервисный аккаунт.
+
+```bash
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud$ kubectl create serviceaccount github-actions -n default
+serviceaccount/github-actions created
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud$ kubectl create clusterrolebinding github-actions-binding --clusterrole=cluster-admin --serviceaccount=default:github-actions
+clusterrolebinding.rbac.authorization.k8s.io/github-actions-binding created
+vmaltsev@DESKTOP-V2R3TOO:~/devops-yandexcloud$ kubectl create token github-actions --duration=999999h -n default
+eyJhbGciOiJSUzI1NiIsImtpZCI6InF4U0ZQelQxbkVrN3JraGJCajZiRjBMNVotX2h2elRxZ1pWQ0JSNmJUM00ifQ.eyJhdWQiOlsia3ViZXJuZXRlcy5kZWZhdWx0L**********************zODkxNjY2M2I3NSJ9fSwibmJmIjoxNzI3Nzg0NTQxLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6ZGVmYXVsdDpnaXRodWItYWN0aW9ucyJ9.Yod9Jtd1qeQKsKZJid5WVemHZU8Tt4XkyaxclI6z5rUh1FFde43oXp9lMX6giTwKShdfz4cCOWZBK6UfnFxIrYrh8jQUyTvaCmCuXUh3c1mrYBJJMgcf1neCFj_rizYN6Zu0NzndU3FCdMPOwfqKvZdm5GbLpirBxqOpvzB3LlR2c-CRsjoyDvO4KGyg3esMQlQbfxvKkm1gYP8Au8-ifc6TQ_w7bQnSOMUi6W0-EmjA9y_h1_1ERnxNg5V7zSgt0ERJPwMjh9k17n1w7bTa5Rjm603nLQz_OeVAh0tUy2dTyy109zvrow65gr-UoYGXUNGyT5xYYfIgtun4QqJROA
+```
+
+Дальше для создания kubeconfig для Github Actions необходимо сформировать конфиг для секрета.
+
+Далее необходимо создать секреты в репозитории DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, KUBECONFIG.
+
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_189.png)
+
+### 3. Проверка сборки и деплоя
+- Создайте коммит и отправьте его в репозиторий.
+- Убедитесь, что CI/CD сервис автоматически запускает сборку Docker-образа и отправляет его в контейнерный реестр.
+- Проверьте, что при добавлении тега происходит сборка с соответствующим лейблом и деплой в Kubernetes.
+
+При коммите без тега происходит только публикация приложения в Docker Hub.
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_190.png)
+
+При коммите с тегом происходит публикация приложения в Docker Hub, с соотвествующим тегом и deploy приложения в кластер.
+
+Пайплайны отрабатывают, деплой успешен
+
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_191.png)
+
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_192.png)
+
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_193.png)
+
+![Grafana](https://github.com/vmmaltsev/screenshot/blob/main/Screenshot_194.png)
+
+### 4. Доступ к интерфейсу CI/CD сервиса
+- Убедитесь, что вы можете открыть веб-интерфейс CI/CD сервиса по HTTP и просмотреть статус пайплайнов.
+
+
+Этот этап позволяет обеспечить автоматизацию процесса сборки и деплоя приложения, что повышает скорость разработки и уменьшает вероятность ошибок при развертывании новых версий.

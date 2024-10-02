@@ -1,0 +1,178 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '*'
+
+env:
+  IMAGE_NAME: maltsevvm/test_app
+  TAG: ${{ github.ref_name }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Клонирование репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Установка Nginx для проверки конфигурации
+      - name: Install Nginx
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nginx
+
+      # Проверка синтаксиса конфигурации Nginx
+      - name: Validate Nginx Configuration
+        run: |
+          echo "Validating Nginx configuration..."
+          sudo nginx -t -c $GITHUB_WORKSPACE/nginx.conf
+
+      # Проверка наличия Dockerfile
+      - name: Check Dockerfile exists
+        run: test -f Dockerfile
+
+      # Установка Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Вход в DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Сборка и отправка Docker-образа
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:cache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:cache,mode=max
+
+      # Тестирование доступности сайта
+      - name: Test Site Availability
+        run: |
+          echo "Testing site availability..."
+          docker run -d --name test_container -p 8080:80 ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+          sleep 5
+          curl -I http://localhost:8080
+          docker stop test_container
+          docker rm test_container
+
+      # Уведомление об успешной сборке
+      - name: Notify Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          fields: repo,ref,author,commit
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      # Клонирование репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Установка kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      # Настройка Kubeconfig
+      - name: Set up Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      # Проверка доступности Kubernetes кластера
+      - name: Verify Kubernetes connection
+        run: |
+          kubectl cluster-info
+          echo "Kubernetes cluster is accessible."
+
+      # Создание или обновление Deployment и Service
+      - name: Deploy tagged Docker image to Kubernetes
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+
+          # Проверяем, существует ли деплоймент
+          if kubectl get deployment nginx-deployment -n default; then
+            echo "Updating existing deployment..."
+            # Обновляем образ контейнера
+            kubectl set image deployment/nginx-deployment *=maltsevvm/test_app:${TAG} -n default
+            kubectl rollout status deployment/nginx-deployment -n default
+          else
+            echo "Creating a new deployment..."
+            kubectl create deployment nginx-deployment --image=maltsevvm/test_app:${TAG} -n default
+
+            # Создаем сервис типа LoadBalancer
+            kubectl expose deployment nginx-deployment --type=LoadBalancer --port=80 -n default
+          fi
+
+          # Проверяем, что сервис имеет тип LoadBalancer
+          SERVICE_TYPE=$(kubectl get service nginx-deployment -n default -o jsonpath='{.spec.type}')
+          if [ "$SERVICE_TYPE" != "LoadBalancer" ]; then
+            echo "Updating service to type LoadBalancer..."
+            kubectl patch service nginx-deployment -n default -p '{"spec":{"type":"LoadBalancer"}}'
+          fi
+
+      # Ожидание присвоения IP-адреса и его вывод
+      - name: Get LoadBalancer IP
+        id: get_ip
+        run: |
+          echo "Waiting for LoadBalancer IP to be assigned..."
+          for i in {1..30}; do
+            IP=$(kubectl get svc nginx-deployment -n default -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ -z "$IP" ]; then
+              IP=$(kubectl get svc nginx-deployment -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            fi
+            if [ -n "$IP" ]; then
+              echo "LoadBalancer IP assigned: $IP"
+              echo "loadbalancer_ip=$IP" >> $GITHUB_ENV
+              break
+            else
+              echo "LoadBalancer IP not assigned yet. Retrying in 10 seconds..."
+              sleep 10
+            fi
+          done
+
+          if [ -z "$IP" ]; then
+            echo "Failed to get LoadBalancer IP after waiting."
+            exit 1
+          fi
+
+      # Проверка успешности деплоя
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n default
+          kubectl get svc nginx-deployment -n default
+          echo "Deployment with tag ${{ env.TAG }} successfully rolled out."
+
+      # Уведомление об успешном деплое
+      - name: Notify Deployment Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          fields: repo,ref,author,commit
+          custom_payload: |
+            {
+              "text": "Deployment successful! LoadBalancer IP: ${{ env.loadbalancer_ip }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
